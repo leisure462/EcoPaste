@@ -362,15 +362,31 @@
         "auto_top": "自动置顶",
         "opacity": "透明度"
       },
-      "functions": {
-        "title": "功能",
-        "add_custom": "自定义功能",
-        "new_function": "新功能"
+      "agents": {
+        "title": "Agent 管理",
+        "preview": "工具栏预览",
+        "add_custom": "添加自定义 Agent",
+        "default_name": "自定义 Agent",
+        "builtin": "内置",
+        "name_placeholder": "Agent 名称",
+        "delete_confirm": "确定要删除此 Agent 吗？",
+        "confirm": "确定",
+        "cancel": "取消",
+        "prompt": "提示词",
+        "prompt_hint": "使用 {{text}} 表示选中的文本",
+        "prompt_placeholder": "请输入提示词..."
       },
       "api": {
-        "title": "AI 服务配置",
-        "openai_hint": "用于翻译、解释、总结等 AI 功能",
-        "gemini_hint": "支持 Google Gemini API"
+        "title": "API 配置",
+        "base_url_hint": "OpenAI 兼容的 API 地址",
+        "key_hint": "API 密钥",
+        "key_required": "请先配置 API Key",
+        "model": "模型",
+        "model_hint": "使用的模型名称",
+        "test": "测试连接",
+        "test_button": "测试 API",
+        "test_success": "API 连接成功",
+        "test_failed": "API 连接失败"
       },
       "advanced": {
         "title": "高级",

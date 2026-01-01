@@ -33,10 +33,10 @@ const SelectionAssistant = () => {
             {/* 功能窗口设置 */}
             <WindowSettings />
 
-            {/* 功能列表 */}
+            {/* Agent 列表 */}
             <FunctionList />
 
-            {/* API Key 设置 */}
+            {/* API 配置 */}
             <ApiKeySettings />
 
             {/* 高级设置 - 应用筛选 */}

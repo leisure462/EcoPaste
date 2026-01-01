@@ -1,8 +1,8 @@
 import { proxy } from "valtio";
 import type { SelectionAssistantStore } from "@/types/selection-assistant";
 
-// 默认功能列表
-const defaultFunctions = [
+// 默认 Agent 列表
+const defaultAgents = [
     {
         id: "translate",
         name: "翻译",
@@ -11,7 +11,6 @@ const defaultFunctions = [
         order: 0,
         isBuiltin: true,
         prompt: "请将以下文本翻译成中文，如果已经是中文则翻译成英文：\n\n{{text}}",
-        apiProvider: "openai" as const,
     },
     {
         id: "explain",
@@ -21,7 +20,6 @@ const defaultFunctions = [
         order: 1,
         isBuiltin: true,
         prompt: "请解释以下内容的含义：\n\n{{text}}",
-        apiProvider: "openai" as const,
     },
     {
         id: "summarize",
@@ -31,7 +29,6 @@ const defaultFunctions = [
         order: 2,
         isBuiltin: true,
         prompt: "请总结以下内容的要点：\n\n{{text}}",
-        apiProvider: "openai" as const,
     },
     {
         id: "search",
@@ -68,12 +65,12 @@ export const selectionAssistantStore = proxy<SelectionAssistantStore>({
         opacity: 100,
     },
 
-    functions: defaultFunctions,
+    agents: defaultAgents,
 
-    apiKeys: {
-        openai: "",
-        gemini: "",
-        custom: [],
+    apiConfig: {
+        baseUrl: "https://api.openai.com",
+        apiKey: "",
+        model: "gpt-3.5-turbo",
     },
 
     appFilter: {

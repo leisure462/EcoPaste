@@ -1,16 +1,11 @@
-import type { LANGUAGE } from "@/constants";
-
 // 划词助手触发方式
 export type SelectionTriggerMode = "selection" | "ctrl" | "shortcut";
 
 // 应用筛选模式
 export type AppFilterMode = "off" | "whitelist" | "blacklist";
 
-// AI 服务提供商
-export type AIProvider = "openai" | "gemini" | "custom";
-
-// 功能项
-export interface FunctionItem {
+// 自定义 Agent
+export interface CustomAgent {
     id: string;
     name: string;
     icon: string;
@@ -18,16 +13,13 @@ export interface FunctionItem {
     order: number;
     isBuiltin: boolean;
     prompt?: string;
-    apiProvider?: AIProvider;
 }
 
-// 自定义 API 配置
-export interface CustomAPIConfig {
-    id: string;
-    name: string;
-    apiKey: string;
+// OpenAI 格式 API 配置
+export interface APIConfig {
     baseUrl: string;
-    model?: string;
+    apiKey: string;
+    model: string;
 }
 
 // 划词助手状态
@@ -43,23 +35,19 @@ export interface SelectionAssistantStore {
 
     // 工具栏设置
     toolbar: {
-        compactMode: boolean;    // 紧凑模式
-        followToolbar: boolean;  // 跟随工具栏
-        rememberSize: boolean;   // 记住大小
-        autoClose: boolean;      // 自动关闭
-        autoTop: boolean;        // 自动置顶
-        opacity: number;         // 透明度 0-100
+        compactMode: boolean;
+        followToolbar: boolean;
+        rememberSize: boolean;
+        autoClose: boolean;
+        autoTop: boolean;
+        opacity: number;
     };
 
-    // 功能列表
-    functions: FunctionItem[];
+    // Agent 列表（内置 + 自定义）
+    agents: CustomAgent[];
 
-    // API Keys 配置
-    apiKeys: {
-        openai?: string;
-        gemini?: string;
-        custom: CustomAPIConfig[];
-    };
+    // API 配置（OpenAI 兼容格式）
+    apiConfig: APIConfig;
 
     // 应用筛选
     appFilter: {
@@ -79,8 +67,7 @@ export interface SelectionEventPayload {
 export interface AIRequestParams {
     text: string;
     prompt: string;
-    provider: AIProvider;
-    customConfig?: CustomAPIConfig;
+    apiConfig: APIConfig;
 }
 
 // AI 响应

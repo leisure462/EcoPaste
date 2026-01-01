@@ -362,15 +362,31 @@
         "auto_top": "Always on Top",
         "opacity": "Opacity"
       },
-      "functions": {
-        "title": "Functions",
-        "add_custom": "Add Custom Function",
-        "new_function": "New Function"
+      "agents": {
+        "title": "Agent Management",
+        "preview": "Toolbar Preview",
+        "add_custom": "Add Custom Agent",
+        "default_name": "Custom Agent",
+        "builtin": "Built-in",
+        "name_placeholder": "Agent Name",
+        "delete_confirm": "Are you sure you want to delete this Agent?",
+        "confirm": "Confirm",
+        "cancel": "Cancel",
+        "prompt": "Prompt",
+        "prompt_hint": "Use {{text}} to represent the selected text",
+        "prompt_placeholder": "Enter prompt..."
       },
       "api": {
-        "title": "AI Service Configuration",
-        "openai_hint": "For translation, explanation, summary and other AI features",
-        "gemini_hint": "Supports Google Gemini API"
+        "title": "API Configuration",
+        "base_url_hint": "OpenAI compatible API endpoint",
+        "key_hint": "API Key",
+        "key_required": "Please configure API Key first",
+        "model": "Model",
+        "model_hint": "Model name to use",
+        "test": "Test Connection",
+        "test_button": "Test API",
+        "test_success": "API connection successful",
+        "test_failed": "API connection failed"
       },
       "advanced": {
         "title": "Advanced",
