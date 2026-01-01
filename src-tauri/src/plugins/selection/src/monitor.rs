@@ -9,13 +9,12 @@ use std::thread;
 use std::time::Duration;
 
 use tauri::{AppHandle, Emitter, Wry};
-use windows::Win32::Foundation::{HMODULE, HWND, LPARAM, LRESULT, WPARAM};
+use windows::Win32::Foundation::{HANDLE, HMODULE, HWND, LPARAM, LRESULT, WPARAM};
 use windows::Win32::System::DataExchange::{
     CloseClipboard, EmptyClipboard, GetClipboardData, OpenClipboard, SetClipboardData,
-    CF_UNICODETEXT,
 };
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
-use windows::Win32::System::Memory::{GlobalAlloc, GlobalLock, GlobalUnlock, GMEM_MOVEABLE, HGLOBAL};
+use windows::Win32::System::Memory::{GlobalAlloc, GlobalLock, GlobalUnlock, GMEM_MOVEABLE};
 use windows::Win32::UI::Input::KeyboardAndMouse::{
     SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYEVENTF_KEYUP, KEYBD_EVENT_FLAGS,
     VK_C, VK_CONTROL,
@@ -28,6 +27,9 @@ use windows::Win32::UI::WindowsAndMessaging::{
 
 use crate::commands::{emit_selection_event, SelectionEvent};
 
+// CF_UNICODETEXT 常量值
+const CF_UNICODETEXT: u32 = 13;
+
 static MONITOR_RUNNING: AtomicBool = AtomicBool::new(false);
 static IS_DRAGGING: AtomicBool = AtomicBool::new(false);
 static DRAG_START_X: AtomicI32 = AtomicI32::new(0);
@@ -38,15 +40,12 @@ static MOUSE_HOOK: Mutex<Option<isize>> = Mutex::new(None);
 static APP_HANDLE: Mutex<Option<AppHandle<Wry>>> = Mutex::new(None);
 
 /// 启动选区监控
-pub fn start_monitor<R: tauri::Runtime>(app: AppHandle<R>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+pub fn start_monitor<R: tauri::Runtime>(_app: AppHandle<R>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     if MONITOR_RUNNING.load(Ordering::SeqCst) {
         return Ok(()); // 已经在运行
     }
 
     MONITOR_RUNNING.store(true, Ordering::SeqCst);
-
-    // 由于 Runtime 泛型问题，这里我们转换为具体类型
-    // 注意：这是一个简化处理，实际使用时需要确保类型匹配
     
     thread::spawn(move || {
         unsafe {
@@ -286,9 +285,8 @@ unsafe fn get_clipboard_text() -> Option<String> {
     }
     
     let result = (|| {
-        let handle = GetClipboardData(CF_UNICODETEXT.0 as u32).ok()?;
-        let hglobal = HGLOBAL(handle.0 as *mut _);
-        let ptr = GlobalLock(hglobal) as *const u16;
+        let handle = GetClipboardData(CF_UNICODETEXT).ok()?;
+        let ptr = GlobalLock(handle.0) as *const u16;
         
         if ptr.is_null() {
             return None;
@@ -303,7 +301,7 @@ unsafe fn get_clipboard_text() -> Option<String> {
         let slice = std::slice::from_raw_parts(ptr, len);
         let text = String::from_utf16_lossy(slice);
         
-        let _ = GlobalUnlock(hglobal);
+        let _ = GlobalUnlock(handle.0);
         
         Some(text)
     })();
@@ -315,24 +313,19 @@ unsafe fn get_clipboard_text() -> Option<String> {
 
 /// 设置剪贴板文本
 unsafe fn set_clipboard_text(text: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    use windows::Win32::Foundation::HANDLE;
-    
     let wide: Vec<u16> = text.encode_utf16().chain(std::iter::once(0)).collect();
     let size = wide.len() * 2;
     
     let mem = GlobalAlloc(GMEM_MOVEABLE, size)?;
-    let ptr = GlobalLock(mem) as *mut u16;
+    let ptr = GlobalLock(mem.0) as *mut u16;
     
     std::ptr::copy_nonoverlapping(wide.as_ptr(), ptr, wide.len());
     
-    let _ = GlobalUnlock(mem);
+    let _ = GlobalUnlock(mem.0);
     
     if OpenClipboard(HWND::default()).is_ok() {
         let _ = EmptyClipboard();
-        let _ = SetClipboardData(
-            CF_UNICODETEXT.0 as u32,
-            HANDLE(mem.0),
-        );
+        let _ = SetClipboardData(CF_UNICODETEXT, HANDLE(mem.0));
         let _ = CloseClipboard();
     }
     

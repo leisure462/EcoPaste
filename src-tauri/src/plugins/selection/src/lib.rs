@@ -1,7 +1,7 @@
 use tauri::{
     generate_handler,
     plugin::{Builder, TauriPlugin},
-    Manager, Runtime,
+    Runtime,
 };
 
 mod commands;
@@ -19,14 +19,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             commands::stop_selection_monitor,
             commands::get_selected_text,
         ])
-        .setup(|app, _api| {
-            #[cfg(target_os = "windows")]
-            {
-                // 设置 AppHandle 用于事件发送
-                if let Some(app_handle) = app.app_handle().try_cast::<tauri::Wry>() {
-                    monitor::set_app_handle(app_handle);
-                }
-            }
+        .setup(|_app, _api| {
             log::info!("Selection monitor plugin initialized");
             Ok(())
         })
