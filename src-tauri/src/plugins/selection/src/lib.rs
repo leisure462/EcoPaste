@@ -22,12 +22,12 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
         .setup(|app, _api| {
             #[cfg(target_os = "windows")]
             {
-                let app_handle = app.clone();
-                std::thread::spawn(move || {
-                    // 后台线程初始化（可选）
-                    log::info!("Selection monitor plugin initialized");
-                });
+                // 设置 AppHandle 用于事件发送
+                if let Some(app_handle) = app.app_handle().try_cast::<tauri::Wry>() {
+                    monitor::set_app_handle(app_handle);
+                }
             }
+            log::info!("Selection monitor plugin initialized");
             Ok(())
         })
         .build()

@@ -23,6 +23,7 @@ pub async fn start_selection_monitor<R: Runtime>(app: AppHandle<R>) -> Result<()
     
     #[cfg(not(target_os = "windows"))]
     {
+        let _ = app;
         log::warn!("Selection monitor is only supported on Windows");
     }
     
@@ -42,7 +43,7 @@ pub async fn stop_selection_monitor<R: Runtime>(_app: AppHandle<R>) -> Result<()
 
 /// 手动获取选中文本（通过模拟 Ctrl+C）
 #[command]
-pub async fn get_selected_text<R: Runtime>(app: AppHandle<R>) -> Result<String, String> {
+pub async fn get_selected_text<R: Runtime>(_app: AppHandle<R>) -> Result<String, String> {
     #[cfg(target_os = "windows")]
     {
         let text = monitor::get_selected_text_via_clipboard().map_err(|e| e.to_string())?;
