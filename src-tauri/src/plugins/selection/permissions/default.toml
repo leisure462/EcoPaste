@@ -1,5 +1,5 @@
-[
-  "allow-start-selection-monitor",
-  "allow-stop-selection-monitor",
-  "allow-get-selected-text"
-]
+"$schema" = "schemas/schema.json"
+
+[default]
+description = "Default permissions for the selection plugin"
+permissions = ["allow-start-selection-monitor", "allow-stop-selection-monitor", "allow-get-selected-text"]
