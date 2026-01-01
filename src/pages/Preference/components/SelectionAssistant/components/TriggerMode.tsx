@@ -1,7 +1,7 @@
 import { Segmented } from "antd";
 import { useTranslation } from "react-i18next";
 import { useSnapshot } from "valtio";
-import ProList from "@/components/ProList";
+import ProListItem from "@/components/ProListItem";
 import ProSwitch from "@/components/ProSwitch";
 import { selectionAssistantStore } from "@/stores/selection-assistant";
 import type { SelectionTriggerMode } from "@/types/selection-assistant";
@@ -18,7 +18,7 @@ const TriggerMode = () => {
 
     return (
         <>
-            <ProList.Item
+            <ProListItem
                 description={t("preference.selection_assistant.trigger.hint")}
                 title={t("preference.selection_assistant.trigger.mode")}
             >
@@ -29,11 +29,10 @@ const TriggerMode = () => {
                     options={options}
                     value={trigger.mode}
                 />
-            </ProList.Item>
+            </ProListItem>
 
             <ProSwitch
                 onChange={(value) => {
-                    // compactMode
                     selectionAssistantStore.toolbar.compactMode = value;
                 }}
                 title={t("preference.selection_assistant.toolbar.compact_mode")}

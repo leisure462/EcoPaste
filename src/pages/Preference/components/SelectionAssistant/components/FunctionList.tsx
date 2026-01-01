@@ -2,6 +2,7 @@ import { Button, Flex, Switch, Tag } from "antd";
 import { useTranslation } from "react-i18next";
 import { useSnapshot } from "valtio";
 import ProList from "@/components/ProList";
+import ProListItem from "@/components/ProListItem";
 import UnoIcon from "@/components/UnoIcon";
 import { selectionAssistantStore } from "@/stores/selection-assistant";
 
@@ -42,7 +43,7 @@ const FunctionList = () => {
     return (
         <ProList header={t("preference.selection_assistant.functions.title")}>
             {/* 预览条 */}
-            <ProList.Item>
+            <ProListItem>
                 <Flex align="center" className="bg-color-3 rounded-lg p-2" gap="small">
                     {functions
                         .filter((f) => f.enabled)
@@ -57,10 +58,10 @@ const FunctionList = () => {
                             </Tag>
                         ))}
                 </Flex>
-            </ProList.Item>
+            </ProListItem>
 
             {/* 添加自定义功能按钮 */}
-            <ProList.Item>
+            <ProListItem>
                 <Button
                     icon={<UnoIcon name="i-lucide:plus" />}
                     onClick={handleAddCustom}
@@ -68,11 +69,11 @@ const FunctionList = () => {
                 >
                     {t("preference.selection_assistant.functions.add_custom")}
                 </Button>
-            </ProList.Item>
+            </ProListItem>
 
             {/* 功能列表 */}
             {functions.map((func) => (
-                <ProList.Item
+                <ProListItem
                     key={func.id}
                     title={
                         <Flex align="center" gap="small">
@@ -90,7 +91,7 @@ const FunctionList = () => {
                         checked={func.enabled}
                         onChange={(checked) => handleToggle(func.id, checked)}
                     />
-                </ProList.Item>
+                </ProListItem>
             ))}
         </ProList>
     );

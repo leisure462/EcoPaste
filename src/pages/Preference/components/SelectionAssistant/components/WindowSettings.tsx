@@ -2,6 +2,7 @@ import { Slider } from "antd";
 import { useTranslation } from "react-i18next";
 import { useSnapshot } from "valtio";
 import ProList from "@/components/ProList";
+import ProListItem from "@/components/ProListItem";
 import ProSwitch from "@/components/ProSwitch";
 import { selectionAssistantStore } from "@/stores/selection-assistant";
 
@@ -45,7 +46,7 @@ const WindowSettings = () => {
                 value={toolbar.autoTop}
             />
 
-            <ProList.Item title={t("preference.selection_assistant.window.opacity")}>
+            <ProListItem title={t("preference.selection_assistant.window.opacity")}>
                 <Slider
                     className="w-40"
                     max={100}
@@ -56,7 +57,7 @@ const WindowSettings = () => {
                     value={toolbar.opacity}
                 />
                 <span className="ml-2 w-12 text-right">{toolbar.opacity}%</span>
-            </ProList.Item>
+            </ProListItem>
         </ProList>
     );
 };

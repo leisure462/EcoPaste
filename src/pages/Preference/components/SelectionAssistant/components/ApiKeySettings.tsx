@@ -2,6 +2,7 @@ import { Input } from "antd";
 import { useTranslation } from "react-i18next";
 import { useSnapshot } from "valtio";
 import ProList from "@/components/ProList";
+import ProListItem from "@/components/ProListItem";
 import { selectionAssistantStore } from "@/stores/selection-assistant";
 
 const ApiKeySettings = () => {
@@ -10,7 +11,7 @@ const ApiKeySettings = () => {
 
     return (
         <ProList header={t("preference.selection_assistant.api.title")}>
-            <ProList.Item
+            <ProListItem
                 description={t("preference.selection_assistant.api.openai_hint")}
                 title="OpenAI API Key"
             >
@@ -22,9 +23,9 @@ const ApiKeySettings = () => {
                     placeholder="sk-..."
                     value={apiKeys.openai}
                 />
-            </ProList.Item>
+            </ProListItem>
 
-            <ProList.Item
+            <ProListItem
                 description={t("preference.selection_assistant.api.gemini_hint")}
                 title="Google Gemini API Key"
             >
@@ -36,7 +37,7 @@ const ApiKeySettings = () => {
                     placeholder="AIza..."
                     value={apiKeys.gemini}
                 />
-            </ProList.Item>
+            </ProListItem>
         </ProList>
     );
 };
