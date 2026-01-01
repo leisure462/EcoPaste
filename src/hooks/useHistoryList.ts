@@ -64,13 +64,24 @@ export const useHistoryList = (options: Options) => {
           const oldPath = join(getSaveImagePath(), value);
           const newPath = join(await getDefaultSaveImagePath(), value);
 
-          if (await exists(oldPath)) {
-            await copyFile(oldPath, newPath);
-
-            remove(oldPath);
+          // 先检查新路径是否已存在图片
+          if (await exists(newPath)) {
+            item.value = newPath;
+          } else if (await exists(oldPath)) {
+            // 从旧路径迁移到新路径
+            try {
+              await copyFile(oldPath, newPath);
+              await remove(oldPath);
+              item.value = newPath;
+            } catch (error) {
+              console.error("图片迁移失败:", error);
+              item.value = oldPath; // 回退到旧路径
+            }
+          } else if (await exists(value)) {
+            // value 可能是完整路径
+            item.value = value;
           }
-
-          item.value = newPath;
+          // 如果都不存在，保持 item.value 为数据库原始值
         }
 
         if (type === "files") {

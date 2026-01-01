@@ -89,6 +89,11 @@ const Main = () => {
   // 窗口显示与隐藏
   useRegister(toggleWindowVisible, [shortcut.clipboard]);
 
+  // 激活时切换至全部分组
+  useTauriListen(LISTEN_KEY.ACTIVATE_SHOW_ALL, () => {
+    state.group = "all";
+  });
+
   // 打开偏好设置窗口
   useKeyPress(PRESET_SHORTCUT.OPEN_PREFERENCES, () => {
     showWindow("preference");
