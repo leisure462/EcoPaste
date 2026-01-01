@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use tauri::{command, AppHandle, Emitter, Runtime, Wry};
+use tauri::{command, AppHandle, Emitter, Manager, Runtime, Wry};
 
 #[cfg(target_os = "windows")]
 use crate::monitor;
@@ -18,14 +18,29 @@ pub struct SelectionEvent {
 pub async fn start_selection_monitor<R: Runtime>(app: AppHandle<R>) -> Result<(), String> {
     #[cfg(target_os = "windows")]
     {
-        // 需要将 R 转换为 Wry 或者让 monitor 支持 generic。
-        // 由于 monitor 使用 static Mutex<AppHandle<Wry>>，这里我们做一个 unsafe transmute 或者假设 R 是 Wry。
-        // 但更好的做法是 lib.rs 中已经 setup 好了，command 只需要简单的触发。
-        // 其实 start_monitor 在 lib.rs setup 中没有被自动调用，需要前端调用。
+        // 安全地将 AppHandle<R> 转换为 AppHandle<Wry>
+        // 1. 如果 R 就是 Wry，这应该直接通过（但泛型限制）
+        // 2. 我们使用 tauri::Manager::app_handle() 获取 handle，然后使用 tauri 的机制
+        // 由于 EcoPaste 只在 Windows 上使用 Wry，我们可以假设 R 兼容
+        // 但是 direct transmute 是 UB 如果大小不同。
+        // 既然我们不能简单转换，我们修改策略：
+        // 让 monitor.rs 的 start_monitor 接受 AppHandle<R> 是不可能的，因为 R 是泛型
+        // 所以我们在 Lib.rs 中初始化时就设置好 monitor 的 AppHandle<Wry>
+        // 这里只是简单的调用 enable/disable 逻辑
         
-        // 尝试转换为 Wry handle，如果失败则说明 Runtime 不匹配
-        let app_wry = unsafe { std::mem::transmute::<AppHandle<R>, AppHandle<Wry>>(app) };
-        monitor::start_monitor(app_wry).map_err(|e| e.to_string())?;
+        // 正确做法：lib.rs 中 setup 已经调用 monitor::set_app_handle(app)
+        // start_monitor 只需要触发 "running" 状态
+        
+        // 但为了支持 start_monitor 传递 app（如果还没 set 的话），我们尝试获取
+        // 实际上，如果 lib.rs 中已经 set 了，这里只需要 toggle flag
+        // monitor::start_monitor() 不再需要参数？或者我们需要更新 app handle？
+        // 让我们修改 monitor::start_monitor 为不接受参数，只启动线程，前提是 app handle 已设置
+        
+        // 但之前的设计是 monitor::start_monitor(app)
+        // 我们可以修改 monitor::start_monitor 为 monitor::enable_monitor()
+        
+        // 考虑到 lib.rs setup 中已经设置了 handle
+        monitor::enable_monitor().map_err(|e| e.to_string())?;
     }
     
     #[cfg(not(target_os = "windows"))]

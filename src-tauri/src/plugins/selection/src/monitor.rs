@@ -9,12 +9,12 @@ use std::thread;
 use std::time::Duration;
 
 use tauri::{AppHandle, Wry};
-use windows::Win32::Foundation::{HANDLE, HMODULE, HWND, LPARAM, LRESULT, WPARAM};
+use windows::Win32::Foundation::{HANDLE, HGLOBAL, HMODULE, HWND, LPARAM, LRESULT, WPARAM};
 use windows::Win32::System::DataExchange::{
     CloseClipboard, EmptyClipboard, GetClipboardData, OpenClipboard, SetClipboardData,
 };
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
-use windows::Win32::System::Memory::{GlobalAlloc, GlobalLock, GlobalUnlock, GMEM_MOVEABLE, HGLOBAL};
+use windows::Win32::System::Memory::{GlobalAlloc, GlobalLock, GlobalUnlock, GMEM_MOVEABLE};
 use windows::Win32::UI::Input::KeyboardAndMouse::{
     SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYEVENTF_KEYUP, KEYBD_EVENT_FLAGS,
     VK_C, VK_CONTROL,
@@ -35,18 +35,23 @@ static IS_DRAGGING: AtomicBool = AtomicBool::new(false);
 static DRAG_START_X: AtomicI32 = AtomicI32::new(0);
 static DRAG_START_Y: AtomicI32 = AtomicI32::new(0);
 
-// 使用 Mutex 包装 HHOOK 和 AppHandle
+// 使用 Mutex 包装 HHOOK
 static MOUSE_HOOK: Mutex<Option<isize>> = Mutex::new(None);
+// 存储 AppHandle，这里我们存储 AppHandle<Wry>
 static APP_HANDLE: Mutex<Option<AppHandle<Wry>>> = Mutex::new(None);
 
-/// 启动选区监控
-pub fn start_monitor(app: AppHandle<Wry>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+/// 启用选区监控（使用已保存的 APP_HANDLE）
+pub fn enable_monitor() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     if MONITOR_RUNNING.load(Ordering::SeqCst) {
         return Ok(()); // 已经在运行
     }
     
-    // 设置 AppHandle
-    set_app_handle(app);
+    // 检查 AppHandle 是否已设置
+    if let Ok(guard) = APP_HANDLE.lock() {
+        if guard.is_none() {
+            log::warn!("Selection monitor started without AppHandle, events will not be emitted");
+        }
+    }
 
     MONITOR_RUNNING.store(true, Ordering::SeqCst);
     
@@ -290,6 +295,7 @@ unsafe fn get_clipboard_text() -> Option<String> {
     let result = (|| {
         let handle = GetClipboardData(CF_UNICODETEXT).ok()?;
         // Handle (HANDLE) 转换为 HGLOBAL
+        // HGLOBAL 在 windows-rs 0.58 中通常是 *mut c_void 包装
         let hglobal = HGLOBAL(handle.0);
         let ptr = GlobalLock(hglobal) as *const u16;
         
@@ -322,7 +328,7 @@ unsafe fn set_clipboard_text(text: &str) -> Result<(), Box<dyn std::error::Error
     let size = wide.len() * 2;
     
     let mem = GlobalAlloc(GMEM_MOVEABLE, size)?;
-    // GlobalAlloc 返回 HGLOBAL (mem)
+    // GlobalAlloc 返回 HGLOBAL
     let ptr = GlobalLock(mem) as *mut u16;
     
     std::ptr::copy_nonoverlapping(wide.as_ptr(), ptr, wide.len());
@@ -331,7 +337,7 @@ unsafe fn set_clipboard_text(text: &str) -> Result<(), Box<dyn std::error::Error
     
     if OpenClipboard(HWND::default()).is_ok() {
         let _ = EmptyClipboard();
-        // HGLOBAL (mem) 转换为 HANDLE
+        // HGLOBAL 转换为 HANDLE
         let _ = SetClipboardData(CF_UNICODETEXT, HANDLE(mem.0));
         let _ = CloseClipboard();
     }
