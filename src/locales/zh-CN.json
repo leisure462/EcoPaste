@@ -253,6 +253,7 @@
         "clipboard": "剪贴板",
         "general": "通用设置",
         "history": "历史记录",
+        "selection_assistant": "划词助手",
         "shortcut": "快捷键"
       }
     },
@@ -335,6 +336,46 @@
           "quick_paste": "快速粘贴"
         },
         "title": "快捷键"
+      }
+    },
+    "selection_assistant": {
+      "title": "划词助手",
+      "enable": "启用",
+      "trigger": {
+        "mode": "取词方式",
+        "hint": "划词后，触发取词并显示工具栏的方式",
+        "selection": "划词",
+        "key": "键",
+        "shortcut": "快捷键"
+      },
+      "toolbar": {
+        "title": "工具栏",
+        "compact_mode": "紧凑模式"
+      },
+      "window": {
+        "title": "功能窗口",
+        "follow_toolbar": "跟随工具栏",
+        "remember_size": "记住大小",
+        "remember_size_hint": "应用运行期间，窗口会保持上次调整的大小显示",
+        "auto_close": "自动关闭",
+        "auto_close_hint": "当窗口未聚焦且失去焦点时，将自动关闭该窗口",
+        "auto_top": "自动置顶",
+        "opacity": "透明度"
+      },
+      "functions": {
+        "title": "功能",
+        "add_custom": "自定义功能",
+        "new_function": "新功能"
+      },
+      "api": {
+        "title": "AI 服务配置",
+        "openai_hint": "用于翻译、解释、总结等 AI 功能",
+        "gemini_hint": "支持 Google Gemini API"
+      },
+      "advanced": {
+        "title": "高级",
+        "app_filter": "应用筛选",
+        "app_filter_hint": "可以限制划词助手只在特定应用中生效（白名单）或不生效（黑名单）"
       }
     },
     "title": "偏好设置"

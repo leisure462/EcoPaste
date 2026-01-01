@@ -1,4 +1,5 @@
 import type { Platform } from "@tauri-apps/plugin-os";
+import type { SelectionAssistantStore } from "./selection-assistant";
 
 export type Theme = "auto" | "light" | "dark";
 
@@ -7,6 +8,7 @@ export type Language = (typeof LANGUAGE)[keyof typeof LANGUAGE];
 export interface Store {
   globalStore: GlobalStore;
   clipboardStore: ClipboardStore;
+  selectionAssistantStore: SelectionAssistantStore;
 }
 
 export interface GlobalStore {

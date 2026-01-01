@@ -16,6 +16,7 @@ import { isAutostart } from "@/plugins/autostart";
 import { showWindow, toggleWindowVisible } from "@/plugins/window";
 import { clipboardStore } from "@/stores/clipboard";
 import { globalStore } from "@/stores/global";
+import { selectionAssistantStore } from "@/stores/selection-assistant";
 import { raf } from "@/utils/bom";
 import { isMac } from "@/utils/is";
 import { saveStore } from "@/utils/store";
@@ -23,6 +24,7 @@ import About from "./components/About";
 import Clipboard from "./components/Clipboard";
 import General from "./components/General";
 import History from "./components/History";
+import SelectionAssistant from "./components/SelectionAssistant";
 import Shortcut from "./components/Shortcut";
 
 const Preference = () => {
@@ -49,12 +51,15 @@ const Preference = () => {
   // 监听剪贴板配置项变化
   useSubscribe(clipboardStore, () => handleStoreChanged());
 
+  // 监听划词助手配置项变化
+  useSubscribe(selectionAssistantStore, () => handleStoreChanged());
+
   // 监听快捷键切换窗口显隐
   useRegister(toggleWindowVisible, [shortcut.preference]);
 
   // 配置项变化通知其它窗口和本地存储
   const handleStoreChanged = () => {
-    emit(LISTEN_KEY.STORE_CHANGED, { clipboardStore, globalStore });
+    emit(LISTEN_KEY.STORE_CHANGED, { clipboardStore, globalStore, selectionAssistantStore });
 
     saveStore();
   };
@@ -84,6 +89,12 @@ const Preference = () => {
         icon: "i-lucide:keyboard",
         key: "shortcut",
         label: t("preference.menu.title.shortcut"),
+      },
+      {
+        content: <SelectionAssistant />,
+        icon: "i-lucide:wand-sparkles",
+        key: "selection-assistant",
+        label: t("preference.menu.title.selection_assistant"),
       },
       // {
       //   content: <Backup />,

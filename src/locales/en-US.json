@@ -253,6 +253,7 @@
         "clipboard": "Clipboard",
         "general": "General",
         "history": "History",
+        "selection_assistant": "Selection Assistant",
         "shortcut": "Shortcuts"
       }
     },
@@ -335,6 +336,46 @@
           "quick_paste": "Quick Paste"
         },
         "title": "Shortcuts"
+      }
+    },
+    "selection_assistant": {
+      "title": "Selection Assistant",
+      "enable": "Enable",
+      "trigger": {
+        "mode": "Trigger Mode",
+        "hint": "How to trigger the toolbar after text selection",
+        "selection": "Selection",
+        "key": "Key",
+        "shortcut": "Shortcut"
+      },
+      "toolbar": {
+        "title": "Toolbar",
+        "compact_mode": "Compact Mode"
+      },
+      "window": {
+        "title": "Function Window",
+        "follow_toolbar": "Follow Toolbar",
+        "remember_size": "Remember Size",
+        "remember_size_hint": "Window will keep the last adjusted size during app runtime",
+        "auto_close": "Auto Close",
+        "auto_close_hint": "Automatically close the window when it loses focus",
+        "auto_top": "Always on Top",
+        "opacity": "Opacity"
+      },
+      "functions": {
+        "title": "Functions",
+        "add_custom": "Add Custom Function",
+        "new_function": "New Function"
+      },
+      "api": {
+        "title": "AI Service Configuration",
+        "openai_hint": "For translation, explanation, summary and other AI features",
+        "gemini_hint": "Supports Google Gemini API"
+      },
+      "advanced": {
+        "title": "Advanced",
+        "app_filter": "App Filter",
+        "app_filter_hint": "Limit selection assistant to work only in specific apps (whitelist) or not work (blacklist)"
       }
     },
     "title": "Preferences"
