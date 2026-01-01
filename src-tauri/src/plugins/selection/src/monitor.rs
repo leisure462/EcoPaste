@@ -1,14 +1,14 @@
 //! Windows 系统级选区监控
 //! 
 //! 使用 WH_MOUSE_LL 低级鼠标钩子监听鼠标事件，
-//! 在鼠标释放时通过模拟 Ctrl+C 获取选中文本。
+//! 在鼠标释放时发送事件通知前端显示工具栏。
 
 use std::sync::atomic::{AtomicBool, AtomicI32, Ordering};
 use std::sync::Mutex;
 use std::thread;
 use std::time::Duration;
 
-use tauri::{AppHandle, Wry};
+use tauri::{AppHandle, Emitter, Wry};
 use windows::Win32::Foundation::{HANDLE, HGLOBAL, HMODULE, HWND, LPARAM, LRESULT, WPARAM};
 use windows::Win32::System::DataExchange::{
     CloseClipboard, EmptyClipboard, GetClipboardData, OpenClipboard, SetClipboardData,
@@ -25,8 +25,6 @@ use windows::Win32::UI::WindowsAndMessaging::{
     WH_MOUSE_LL, WM_LBUTTONUP, WM_LBUTTONDOWN,
 };
 
-use crate::commands::{emit_selection_event, SelectionEvent};
-
 // CF_UNICODETEXT 常量值
 const CF_UNICODETEXT: u32 = 13;
 
@@ -37,10 +35,17 @@ static DRAG_START_Y: AtomicI32 = AtomicI32::new(0);
 
 // 使用 Mutex 包装 HHOOK
 static MOUSE_HOOK: Mutex<Option<isize>> = Mutex::new(None);
-// 存储 AppHandle，这里我们存储 AppHandle<Wry>
+// 存储 AppHandle
 static APP_HANDLE: Mutex<Option<AppHandle<Wry>>> = Mutex::new(None);
 
-/// 启用选区监控（使用已保存的 APP_HANDLE）
+/// 选区事件数据（只包含坐标，不包含文本）
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct SelectionEvent {
+    pub x: i32,
+    pub y: i32,
+}
+
+/// 启用选区监控
 pub fn enable_monitor() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     if MONITOR_RUNNING.load(Ordering::SeqCst) {
         return Ok(()); // 已经在运行
@@ -157,33 +162,17 @@ unsafe extern "system" fn mouse_hook_proc(
                         let x = end_x;
                         let y = end_y;
                         
-                        // 在新线程中处理获取文本
-                        thread::spawn(move || {
-                            thread::sleep(Duration::from_millis(100));
-                            
-                            match get_selected_text_via_clipboard() {
-                                Ok(text) => {
-                                    if !text.is_empty() {
-                                        log::info!("Selected text: {} chars at ({}, {})", text.len(), x, y);
-                                        
-                                        // 发送事件到前端
-                                        if let Ok(guard) = APP_HANDLE.lock() {
-                                            if let Some(app) = guard.as_ref() {
-                                                emit_selection_event(app, SelectionEvent {
-                                                    text,
-                                                    x,
-                                                    y,
-                                                    trigger: "selected".to_string(),
-                                                });
-                                            }
-                                        }
-                                    }
-                                }
-                                Err(e) => {
-                                    log::error!("Failed to get selected text: {}", e);
+                        // 直接发送事件（只包含坐标），不获取文本
+                        if let Ok(guard) = APP_HANDLE.lock() {
+                            if let Some(app) = guard.as_ref() {
+                                let event = SelectionEvent { x, y };
+                                if let Err(e) = app.emit("selection:show-toolbar", event) {
+                                    log::error!("Failed to emit selection event: {}", e);
+                                } else {
+                                    log::info!("Selection detected at ({}, {}), sent show-toolbar event", x, y);
                                 }
                             }
-                        });
+                        }
                     }
                 }
             }
@@ -194,7 +183,7 @@ unsafe extern "system" fn mouse_hook_proc(
     CallNextHookEx(None, n_code, w_param, l_param)
 }
 
-/// 通过模拟 Ctrl+C 获取选中文本
+/// 通过模拟 Ctrl+C 获取选中文本（用户点击按钮时调用）
 pub fn get_selected_text_via_clipboard() -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     unsafe {
         // 1. 保存当前剪贴板内容
@@ -294,8 +283,6 @@ unsafe fn get_clipboard_text() -> Option<String> {
     
     let result = (|| {
         let handle = GetClipboardData(CF_UNICODETEXT).ok()?;
-        // Handle (HANDLE) 转换为 HGLOBAL
-        // HGLOBAL 在 windows-rs 0.58 中通常是 *mut c_void 包装
         let hglobal = HGLOBAL(handle.0);
         let ptr = GlobalLock(hglobal) as *const u16;
         
@@ -328,7 +315,6 @@ unsafe fn set_clipboard_text(text: &str) -> Result<(), Box<dyn std::error::Error
     let size = wide.len() * 2;
     
     let mem = GlobalAlloc(GMEM_MOVEABLE, size)?;
-    // GlobalAlloc 返回 HGLOBAL
     let ptr = GlobalLock(mem) as *mut u16;
     
     std::ptr::copy_nonoverlapping(wide.as_ptr(), ptr, wide.len());
@@ -337,7 +323,6 @@ unsafe fn set_clipboard_text(text: &str) -> Result<(), Box<dyn std::error::Error
     
     if OpenClipboard(HWND::default()).is_ok() {
         let _ = EmptyClipboard();
-        // HGLOBAL 转换为 HANDLE
         let _ = SetClipboardData(CF_UNICODETEXT, HANDLE(mem.0));
         let _ = CloseClipboard();
     }

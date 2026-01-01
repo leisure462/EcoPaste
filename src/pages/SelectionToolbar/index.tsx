@@ -1,98 +1,158 @@
-import { useEffect, useState } from "react";
-import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
+import { getCurrentWindow, PhysicalPosition } from "@tauri-apps/api/window";
+import { useEffect, useState } from "react";
 import { useSnapshot } from "valtio";
-import { selectionAssistantStore } from "@/stores/selection-assistant";
 import UnoIcon from "@/components/UnoIcon";
+import { selectionAssistantStore } from "@/stores/selection-assistant";
 import { callAI } from "@/utils/ai-api";
 
 interface SelectionEvent {
-    text: string;
-    x: number;
-    y: number;
-    trigger: string;
+  x: number;
+  y: number;
 }
 
 const SelectionToolbar = () => {
-    const { agents, apiConfig } = useSnapshot(selectionAssistantStore);
-    const [selectedText, setSelectedText] = useState("");
-    const [loading, setLoading] = useState(false);
+  const { agents, toolbar } = useSnapshot(selectionAssistantStore);
+  const [loading, setLoading] = useState(false);
 
-    // 获取启用的 agents
-    const enabledAgents = agents.filter((a) => a.enabled).sort((a, b) => a.order - b.order);
+  // 紧凑模式
+  const compactMode = toolbar.compactMode;
 
-    // 预设功能的中文名映射
-    const builtinLabels: Record<string, string> = {
-        translate: "翻译",
-        explain: "解释",
-        summarize: "总结",
-        search: "搜索",
-        copy: "复制",
-    };
+  // 获取启用的 agents
+  const enabledAgents = agents.filter((a) => a.enabled).sort((a) => a.order);
 
-    useEffect(() => {
-        // 监听选区事件
-        const unlisten = listen<SelectionEvent>("selection:text-selected", (event) => {
-            const { text } = event.payload;
-            setSelectedText(text);
-        });
+  // 预设功能的中文名映射
+  const builtinLabels: Record<string, string> = {
+    copy: "复制",
+    explain: "解释",
+    search: "搜索",
+    summarize: "总结",
+    translate: "翻译",
+  };
 
-        return () => {
-            unlisten.then((fn) => fn());
-        };
-    }, []);
+  useEffect(() => {
+    const window = getCurrentWindow();
 
-    const handleAgentClick = async (agentId: string, prompt?: string) => {
-        if (!selectedText) return;
+    // 监听显示工具栏事件
+    const unlistenShowToolbar = listen<SelectionEvent>(
+      "selection:show-toolbar",
+      async (event) => {
+        const { x, y } = event.payload;
 
-        // 处理特殊 agent
-        if (agentId === "copy") {
-            await navigator.clipboard.writeText(selectedText);
-            return;
+        try {
+          // 移动窗口到鼠标位置（稍微偏移一点，避免遮挡选区）
+          await window.setPosition(new PhysicalPosition(x + 10, y + 10));
+          // 显示窗口
+          await window.show();
+          await window.setFocus();
+          // 窗口已显示
+        } catch (error) {
+          console.error("Failed to show toolbar:", error);
         }
-
-        if (agentId === "search") {
-            const url = `https://www.google.com/search?q=${encodeURIComponent(selectedText)}`;
-            window.open(url, "_blank");
-            return;
-        }
-
-        // AI 功能
-        if (prompt) {
-            setLoading(true);
-            try {
-                const response = await callAI({
-                    text: selectedText,
-                    prompt,
-                    apiConfig: selectionAssistantStore.apiConfig,
-                });
-                if (response.success && response.content) {
-                    // TODO: 显示结果弹窗
-                    console.log("AI Response:", response.content);
-                }
-            } catch (error) {
-                console.error("AI error:", error);
-            } finally {
-                setLoading(false);
-            }
-        }
-    };
-
-    return (
-        <div className="flex items-center gap-2 px-3 py-2 bg-opacity-95 backdrop-blur-sm rounded-full shadow-lg border border-solid border-gray-600">
-            {enabledAgents.map((agent) => (
-                <button
-                    key={agent.id}
-                    className="flex items-center gap-1 px-3 py-1 rounded-full bg-gray-700 hover:bg-gray-600 transition-colors text-white text-sm cursor-pointer border-none"
-                    onClick={() => handleAgentClick(agent.id, agent.prompt)}
-                    disabled={loading}
-                >
-                    <UnoIcon name={agent.icon} size={14} />
-                    <span>{builtinLabels[agent.id] || agent.name}</span>
-                </button>
-            ))}
-        </div>
+      },
     );
+
+    // 监听窗口失焦事件，自动隐藏
+    const unlistenBlur = window.onFocusChanged(({ payload: focused }) => {
+      if (!focused) {
+        window.hide();
+        // 窗口自动隐藏
+      }
+    });
+
+    return () => {
+      unlistenShowToolbar.then((fn) => fn());
+      unlistenBlur.then((fn) => fn());
+    };
+  }, []);
+
+  // 隐藏工具栏
+  const hideToolbar = async () => {
+    const window = getCurrentWindow();
+    await window.hide();
+    // 窗口已隐藏
+  };
+
+  // 处理 Agent 点击
+  const handleAgentClick = async (agentId: string, prompt?: string) => {
+    try {
+      // 先获取选中的文本
+      const selectedText = await invoke<string>(
+        "plugin:eco-selection|get_selected_text",
+      );
+
+      if (!selectedText) {
+        console.warn("No text selected");
+        await hideToolbar();
+        return;
+      }
+
+      // 处理特殊 agent
+      if (agentId === "copy") {
+        await navigator.clipboard.writeText(selectedText);
+        await hideToolbar();
+        return;
+      }
+
+      if (agentId === "search") {
+        const url = `https://www.google.com/search?q=${encodeURIComponent(selectedText)}`;
+        const { openUrl } = await import("@tauri-apps/plugin-opener");
+        await openUrl(url);
+        await hideToolbar();
+        return;
+      }
+
+      // AI 功能
+      if (prompt) {
+        setLoading(true);
+        try {
+          const response = await callAI({
+            apiConfig: selectionAssistantStore.apiConfig,
+            prompt,
+            text: selectedText,
+          });
+          if (response.success && response.content) {
+            // TODO: 显示结果弹窗
+            console.log("AI Response:", response.content);
+            // 可以将结果复制到剪贴板
+            await navigator.clipboard.writeText(response.content);
+          }
+        } catch (error) {
+          console.error("AI error:", error);
+        } finally {
+          setLoading(false);
+        }
+      }
+
+      await hideToolbar();
+    } catch (error) {
+      console.error("handleAgentClick error:", error);
+      await hideToolbar();
+    }
+  };
+
+  return (
+    <div
+      className="flex items-center gap-1 rounded-lg border border-gray-600 border-solid bg-gray-800 bg-opacity-95 px-2 py-1.5 shadow-xl backdrop-blur-sm"
+      data-tauri-drag-region
+      style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
+    >
+      {enabledAgents.map((agent) => (
+        <button
+          className="flex cursor-pointer items-center justify-center gap-1 rounded-md border-none bg-gray-700 px-2 py-1 text-white text-xs transition-colors hover:bg-gray-600"
+          disabled={loading}
+          key={agent.id}
+          onClick={() => handleAgentClick(agent.id, agent.prompt)}
+          title={builtinLabels[agent.id] || agent.name}
+        >
+          <UnoIcon name={agent.icon} size={16} />
+          {/* 紧凑模式只显示图标 */}
+          {!compactMode && <span>{builtinLabels[agent.id] || agent.name}</span>}
+        </button>
+      ))}
+    </div>
+  );
 };
 
 export default SelectionToolbar;
