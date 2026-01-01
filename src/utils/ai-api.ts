@@ -1,4 +1,3 @@
-import { fetch } from "@tauri-apps/plugin-http";
 import type { APIConfig, AIRequestParams, AIResponse } from "@/types/selection-assistant";
 
 /**
@@ -51,7 +50,7 @@ export async function callAI(params: AIRequestParams): Promise<AIResponse> {
 /**
  * 在浏览器中搜索
  */
-export function searchInBrowser(text: string, engine = "google") {
+export async function searchInBrowser(text: string, engine = "google") {
     const encodedText = encodeURIComponent(text);
     let url = "";
 
@@ -70,7 +69,6 @@ export function searchInBrowser(text: string, engine = "google") {
     }
 
     // 使用 Tauri 打开 URL
-    import("@tauri-apps/plugin-opener").then((opener) => {
-        opener.openUrl(url);
-    });
+    const { openUrl } = await import("@tauri-apps/plugin-opener");
+    await openUrl(url);
 }
