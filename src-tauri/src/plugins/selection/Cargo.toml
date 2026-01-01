@@ -1,0 +1,29 @@
+[package]
+name = "tauri-plugin-eco-selection"
+version = "0.1.0"
+authors = []
+description = "划词助手插件 - 系统级选中文本监听"
+edition = "2021"
+rust-version = "1.77.2"
+links = "tauri-plugin-eco-selection"
+
+[dependencies]
+tauri.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+log.workspace = true
+
+[target."cfg(target_os = \"windows\")".dependencies]
+windows = { version = "0.58", features = [
+    "Win32_Foundation",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_System_LibraryLoader",
+    "Win32_System_Threading",
+    "Win32_UI_Input_KeyboardAndMouse",
+    "Win32_System_DataExchange",
+    "Win32_System_Memory",
+    "Win32_Globalization",
+] }
+
+[build-dependencies]
+tauri-plugin.workspace = true

@@ -1,0 +1,5 @@
+[
+  "allow-start-selection-monitor",
+  "allow-stop-selection-monitor",
+  "allow-get-selected-text"
+]

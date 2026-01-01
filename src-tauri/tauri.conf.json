@@ -6,7 +6,9 @@
       "assetProtocol": {
         "enable": true,
         "scope": {
-          "allow": ["**/*"],
+          "allow": [
+            "**/*"
+          ],
           "requireLiteralLeadingDot": false
         }
       },
@@ -47,9 +49,25 @@
         "visible": false,
         "width": 700,
         "windowEffects": {
-          "effects": ["sidebar"],
+          "effects": [
+            "sidebar"
+          ],
           "state": "active"
         }
+      },
+      {
+        "alwaysOnTop": true,
+        "decorations": false,
+        "focus": false,
+        "height": 48,
+        "label": "selection-toolbar",
+        "maximizable": false,
+        "resizable": false,
+        "skipTaskbar": true,
+        "transparent": true,
+        "url": "index.html/#/selection-toolbar",
+        "visible": false,
+        "width": 400
       }
     ]
   },
@@ -69,9 +87,18 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "resources": ["assets/tray.ico"],
+    "resources": [
+      "assets/tray.ico"
+    ],
     "shortDescription": "EcoPaste",
-    "targets": ["nsis", "dmg", "app", "appimage", "deb", "rpm"]
+    "targets": [
+      "nsis",
+      "dmg",
+      "app",
+      "appimage",
+      "deb",
+      "rpm"
+    ]
   },
   "identifier": "com.ayangweb.EcoPaste",
   "mainBinaryName": "EcoPaste",
@@ -80,7 +107,9 @@
       "requireLiteralLeadingDot": false
     },
     "updater": {
-      "endpoints": ["https://api.ecopaste.cn/update"],
+      "endpoints": [
+        "https://api.ecopaste.cn/update"
+      ],
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDcwNEIyQkUwRjNEMTg4NgpSV1NHR0QwUHZySUVCeXFRQzZ4aEpNRWdFdThVQ2I4b2dSQktRcmNtV1dYTFJJV1h2VmVVZXBWSgo="
     }
   },
