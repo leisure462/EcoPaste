@@ -8,13 +8,13 @@ use std::sync::Mutex;
 use std::thread;
 use std::time::Duration;
 
-use tauri::{AppHandle, Emitter, Wry};
+use tauri::{AppHandle, Wry};
 use windows::Win32::Foundation::{HANDLE, HMODULE, HWND, LPARAM, LRESULT, WPARAM};
 use windows::Win32::System::DataExchange::{
     CloseClipboard, EmptyClipboard, GetClipboardData, OpenClipboard, SetClipboardData,
 };
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
-use windows::Win32::System::Memory::{GlobalAlloc, GlobalLock, GlobalUnlock, GMEM_MOVEABLE};
+use windows::Win32::System::Memory::{GlobalAlloc, GlobalLock, GlobalUnlock, GMEM_MOVEABLE, HGLOBAL};
 use windows::Win32::UI::Input::KeyboardAndMouse::{
     SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYEVENTF_KEYUP, KEYBD_EVENT_FLAGS,
     VK_C, VK_CONTROL,
@@ -40,10 +40,13 @@ static MOUSE_HOOK: Mutex<Option<isize>> = Mutex::new(None);
 static APP_HANDLE: Mutex<Option<AppHandle<Wry>>> = Mutex::new(None);
 
 /// 启动选区监控
-pub fn start_monitor<R: tauri::Runtime>(_app: AppHandle<R>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+pub fn start_monitor(app: AppHandle<Wry>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     if MONITOR_RUNNING.load(Ordering::SeqCst) {
         return Ok(()); // 已经在运行
     }
+    
+    // 设置 AppHandle
+    set_app_handle(app);
 
     MONITOR_RUNNING.store(true, Ordering::SeqCst);
     
@@ -286,7 +289,9 @@ unsafe fn get_clipboard_text() -> Option<String> {
     
     let result = (|| {
         let handle = GetClipboardData(CF_UNICODETEXT).ok()?;
-        let ptr = GlobalLock(handle.0) as *const u16;
+        // Handle (HANDLE) 转换为 HGLOBAL
+        let hglobal = HGLOBAL(handle.0);
+        let ptr = GlobalLock(hglobal) as *const u16;
         
         if ptr.is_null() {
             return None;
@@ -301,7 +306,7 @@ unsafe fn get_clipboard_text() -> Option<String> {
         let slice = std::slice::from_raw_parts(ptr, len);
         let text = String::from_utf16_lossy(slice);
         
-        let _ = GlobalUnlock(handle.0);
+        let _ = GlobalUnlock(hglobal);
         
         Some(text)
     })();
@@ -317,14 +322,16 @@ unsafe fn set_clipboard_text(text: &str) -> Result<(), Box<dyn std::error::Error
     let size = wide.len() * 2;
     
     let mem = GlobalAlloc(GMEM_MOVEABLE, size)?;
-    let ptr = GlobalLock(mem.0) as *mut u16;
+    // GlobalAlloc 返回 HGLOBAL (mem)
+    let ptr = GlobalLock(mem) as *mut u16;
     
     std::ptr::copy_nonoverlapping(wide.as_ptr(), ptr, wide.len());
     
-    let _ = GlobalUnlock(mem.0);
+    let _ = GlobalUnlock(mem);
     
     if OpenClipboard(HWND::default()).is_ok() {
         let _ = EmptyClipboard();
+        // HGLOBAL (mem) 转换为 HANDLE
         let _ = SetClipboardData(CF_UNICODETEXT, HANDLE(mem.0));
         let _ = CloseClipboard();
     }
